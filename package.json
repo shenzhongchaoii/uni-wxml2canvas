@@ -1,0 +1,45 @@
+{
+  "name": "uni-wxml2canvas",
+  "author": "shenzhongchaoii",
+  "license": "MIT",
+  "version": "1.0.0",
+  "description": "一个通过描述式配置将wxml渲染到canvas并转成图片的uniapp工具库",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shenzhongchaoii/uni-wxml2canvas"
+  },
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/index.cjs.js",
+  "module": "./dist/index.es.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.es.js"
+      },
+      "require": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.cjs.js"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc && vite build"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.33",
+    "terser": "^5.x",
+    "tslib": "^2.6.2",
+    "typescript": "^5.4.5",
+    "vite": "^4.5.3",
+    "vite-plugin-dts": "^3.9.1"
+  }
+}
