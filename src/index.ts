@@ -153,7 +153,6 @@ export class Wxml2Canvas {
    * 绘制
    */
   public async draw(): Promise<void> {
-    console.log(this.wxml2ds)
     for (const wxmls of this.wxml2ds) {
       await Promise.allSettled(
         wxmls.map(item => {
@@ -236,7 +235,6 @@ export class Wxml2Canvas {
     lineWidth,
     lineColor
   }: W2CDrawCircle): void {
-    console.log(startX, startY, radius, 0, Math.PI * 2)
     this.ctx.beginPath()
     this.ctx.arc(startX, startY, radius, 0, Math.PI * 2)
 
