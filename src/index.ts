@@ -1,20 +1,11 @@
 export type W2CDrawType = 'IMAGE' | 'TEXT' | 'CIRCLE' | 'RECT' | 'ROUNDRECT'
 
-export type W2COptions = Record<'width' | 'height', number> & Record<'wxml', W2CWxml | W2CWxml[]>
-
-/** wxml 描述 */
 export interface W2CWxml {
   type: W2CDrawType
-  layer?: number // 层级控制
-  desc: // 类型专属配置
-    | W2CDrawImage
-    | W2CDrawText
-    | W2CDrawCircle
-    | W2CDrawRect
-    | W2CDrawRoundRect
+  layer?: number
+  desc: W2CDrawImage | W2CDrawText | W2CDrawCircle | W2CDrawRect | W2CDrawRoundRect
 }
 
-/** 绘制的起点、终点 */
 export interface W2CDrawStartPosition {
   startX: number
   startY: number
@@ -37,7 +28,7 @@ export interface W2CDrawText extends W2CDrawStartPosition {
 export interface W2CDrawCircle extends W2CDrawStartPosition {
   radius: number
   /** 支持 rgb、rgba、十六进制、颜色英文 */
-  fillColor?: string
+  fillColor: string
   lineWidth?: number
   lineColor?: string
 }
@@ -46,8 +37,9 @@ export interface W2CDrawRect extends W2CDrawStartPosition {
   width: number
   height: number
   /** 支持 rgb、rgba、十六进制、颜色英文 */
-  fillColor?: string
+  fillColor: string
   lineWidth?: number
+  /** 支持 rgb、rgba、十六进制、颜色英文 */
   lineColor?: string
 }
 
@@ -63,6 +55,7 @@ export class Wxml2Canvas {
 
   // @ts-ignore
   private ctx: UniApp.CanvasContext
+  private instance: any
 
   /**
    * 构造函数
@@ -71,48 +64,49 @@ export class Wxml2Canvas {
    */
   constructor(
     canvasId: string,
+    instance: any,
     options: {
       width: number
       height: number
       wxml: W2CWxml | W2CWxml[]
-    }
+    },
   ) {
     this.canvasId = canvasId
-    // @ts-ignore
-    this.ctx = uni.createCanvasContext(canvasId)
+    this.instance = instance
 
     const { width, height, wxml } = options
     this.width = width
     this.height = height
 
-    this.wxml2ds = this.groupElementsByLayer<W2CWxml>(
-      Array.isArray(wxml) ? wxml : [wxml]
-    )
+    this.wxml2ds = this.groupElementsByLayer<W2CWxml>(Array.isArray(wxml) ? wxml : [wxml])
   }
 
   /**
    * 生成并返回图片路径
    * @returns Promise<string> 返回图片临时路径
    */
-  public generate(): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-      if (!this.ctx) {
-        reject(new Error('Canvas context is not initialized'))
-        return
-      }
+  public async generate(): Promise<string> {
+    this.ctx = uni.createCanvasContext(this.canvasId, this.instance)
 
-      // 开始绘制
-      await this.draw()
+    if (!this.ctx) {
+      throw new Error('Canvas context is not initialized')
+    }
 
-      // 完成绘制并生成图片
-      this.ctx.draw(false, () => {
-        setTimeout(() => {
-          // 获取设备信息，处理不同设备像素比
-          // @ts-ignore
-          const systemInfo = uni.getSystemInfoSync()
-          const pixelRatio = systemInfo.pixelRatio || 2
-          // @ts-ignore
-          uni.canvasToTempFilePath({
+    this.ctx.clearRect(0, 0, this.width, this.height)
+
+    // 开始绘制
+    await this.draw()
+
+    this.ctx.draw()
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        // 获取设备信息，处理不同设备像素比
+        // @ts-ignore
+        const systemInfo = uni.getSystemInfoSync()
+        const pixelRatio = systemInfo.pixelRatio || 2
+        // @ts-ignore
+        uni.canvasToTempFilePath(
+          {
             canvasId: this.canvasId,
             width: this.width,
             height: this.height,
@@ -123,29 +117,34 @@ export class Wxml2Canvas {
             },
             fail: (error: any) => {
               reject(error)
-            }
-          })
-        }, 200) // 短暂延时确保canvas绘制完成
-      })
+            },
+          },
+          this.instance,
+        )
+      }, 300) // 短暂延时确保canvas绘制完成
     })
   }
 
   private async drawWithTypeSelection({ type, desc }: W2CWxml) {
     switch (type) {
       case 'IMAGE':
-        return this.drawImage(desc as W2CDrawImage)
+        await this.drawImage(desc as W2CDrawImage)
+        return
 
       case 'TEXT':
-        return this.drawText(desc as W2CDrawText)
+        this.drawText(desc as W2CDrawText)
+        return
 
       case 'CIRCLE':
         return this.drawCircle(desc as W2CDrawCircle)
 
       case 'RECT':
-        return this.drawRect(desc as W2CDrawRect)
+        this.drawRect(desc as W2CDrawRect)
+        return
 
       case 'ROUNDRECT':
-        return this.drawRoundRect(desc as W2CDrawRoundRect)
+        this.drawRoundRect(desc as W2CDrawRoundRect)
+        return
     }
   }
 
@@ -154,19 +153,16 @@ export class Wxml2Canvas {
    */
   public async draw(): Promise<void> {
     for (const wxmls of this.wxml2ds) {
-      await Promise.allSettled(
-        wxmls.map(item => {
+      await Promise.all(
+        wxmls.map((item) => {
           return this.drawWithTypeSelection(item)
-        })
+        }),
       )
     }
+    return
   }
 
-  private async drawImage({
-    url,
-    startX,
-    startY
-  }: W2CDrawImage): Promise<void> {
+  private async drawImage({ url, startX, startY }: W2CDrawImage): Promise<void> {
     const { path, width, height } = await this.getTempFileInfo(url)
     this.ctx.drawImage(path, startX, startY, width, height)
   }
@@ -182,7 +178,7 @@ export class Wxml2Canvas {
     align,
     fillColor,
     maxWidth,
-    lineHeight
+    lineHeight,
   }: W2CDrawText): void {
     if (font) this.ctx.font = font
     if (align) this.ctx.setTextAlign(align)
@@ -208,11 +204,7 @@ export class Wxml2Canvas {
             if (j === 0) {
               this.ctx.fillText(`${nowStr.slice(0, m - 1)}...`, startX, startY)
             } else {
-              this.ctx.fillText(
-                nowStr.slice(0, m),
-                startX,
-                startY + lineHeight!
-              )
+              this.ctx.fillText(nowStr.slice(0, m), startX, startY + lineHeight!)
             }
             endPos += m
             break
@@ -233,7 +225,7 @@ export class Wxml2Canvas {
     radius,
     fillColor,
     lineWidth,
-    lineColor
+    lineColor,
   }: W2CDrawCircle): void {
     this.ctx.beginPath()
     this.ctx.arc(startX, startY, radius, 0, Math.PI * 2)
@@ -262,7 +254,7 @@ export class Wxml2Canvas {
     height,
     fillColor,
     lineWidth,
-    lineColor
+    lineColor,
   }: W2CDrawRect): void {
     // 开始绘制路径
     this.ctx.beginPath()
@@ -297,51 +289,27 @@ export class Wxml2Canvas {
     radius,
     fillColor,
     lineWidth,
-    lineColor
+    lineColor,
   }: W2CDrawRoundRect): void {
     this.ctx.beginPath()
 
     // 绘制左上角圆弧
-    this.ctx.arc(
-      startX + radius,
-      startY + radius,
-      radius,
-      Math.PI,
-      Math.PI * 1.5
-    )
+    this.ctx.arc(startX + radius, startY + radius, radius, Math.PI, Math.PI * 1.5)
     // 绘制上边线
     this.ctx.lineTo(startX + width - radius, startY)
 
     // 绘制右上角圆弧
-    this.ctx.arc(
-      startX + width - radius,
-      startY + radius,
-      radius,
-      Math.PI * 1.5,
-      Math.PI * 2
-    )
+    this.ctx.arc(startX + width - radius, startY + radius, radius, Math.PI * 1.5, Math.PI * 2)
     // 绘制右边线
     this.ctx.lineTo(startX + width, startY + height - radius)
 
     // 绘制右下角圆弧
-    this.ctx.arc(
-      startX + width - radius,
-      startY + height - radius,
-      radius,
-      0,
-      Math.PI * 0.5
-    )
+    this.ctx.arc(startX + width - radius, startY + height - radius, radius, 0, Math.PI * 0.5)
     // 绘制下边线
     this.ctx.lineTo(startX + radius, startY + height)
 
     // 绘制左下角圆弧
-    this.ctx.arc(
-      startX + radius,
-      startY + height - radius,
-      radius,
-      Math.PI * 0.5,
-      Math.PI
-    )
+    this.ctx.arc(startX + radius, startY + height - radius, radius, Math.PI * 0.5, Math.PI)
     // 绘制左边线
     this.ctx.lineTo(startX, startY + radius)
 
@@ -421,9 +389,7 @@ export class Wxml2Canvas {
   /**
    * 按照 layer 分组元素，layer 越小越先绘制
    */
-  private groupElementsByLayer<T extends { layer?: number }>(
-    elements: T[]
-  ): T[][] {
+  private groupElementsByLayer<T extends { layer?: number }>(elements: T[]): T[][] {
     if (!elements.length) return []
 
     const sortedElements = [...elements].sort((a, b) => {
@@ -457,21 +423,19 @@ export class Wxml2Canvas {
     return result
   }
   private getTempFileInfo(
-    url: string
+    url: string,
     // @ts-ignore
   ): Promise<UniApp.GetImageInfoSuccessData> {
     return new Promise((resolve, reject) => {
       // @ts-ignore
       uni.getImageInfo({
         src: url,
-        success: (
-          res: Record<'path', string> & Record<'width' | 'height', number>
-        ) => {
+        success: (res: Record<'path', string> & Record<'width' | 'height', number>) => {
           resolve(res)
         },
         fail: (error: any) => {
           reject(error)
-        }
+        },
       })
     })
   }
