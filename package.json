@@ -2,7 +2,7 @@
   "name": "uni-wxml2canvas",
   "author": "shenzhongchaoii",
   "license": "MIT",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "一个通过描述式配置将wxml渲染到canvas并转成图片的uniapp工具库",
   "publishConfig": {
     "access": "public",
