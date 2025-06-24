@@ -53,6 +53,8 @@ pnpm add uni-wxml2canvas@latest
 </template>
 ```
 
+### instance: 组件instance的值
+
 ### options：描述最终要生成的图片中存在哪些内容
 
 ```typescript
@@ -227,6 +229,8 @@ const currentProgress = computed(() => {
   return calculateNonLinearProgress(current.value, 800)
 })
 
+const instance = getCurrentInstance()
+
 const generatePoster = async () => {
   uni.showLoading({ title: '海报生成中...' })
 
@@ -376,25 +380,29 @@ const generatePoster = async () => {
       })
       .flat(2)
 
-    const wxml2canvas = new Wxml2Canvas('poster-canvas', {
-      width: 648,
-      height: 1016,
-      wxml: [
-        {
-          type: 'IMAGE',
-          layer: 0,
-          desc: {
-            url: 'https://xxxx.png',
-            startX: 0,
-            startY: 0,
+    const wxml2canvas = new Wxml2Canvas(
+      'poster-canvas',
+      instance,
+      {
+        width: 648,
+        height: 1016,
+        wxml: [
+          {
+            type: 'IMAGE',
+            layer: 0,
+            desc: {
+              url: 'https://xxxx.png',
+              startX: 0,
+              startY: 0,
+            },
           },
-        },
-        ...texts,
-        progress,
-        progressBar,
-        ...milestones,
-      ],
-    })
+          ...texts,
+          progress,
+          progressBar,
+          ...milestones,
+        ],
+      }
+    )
 
     posterUrl.value = await wxml2canvas.generate()
   } catch (e) {
