@@ -93,12 +93,20 @@ export interface W2CDrawStartPosition {
 
 元素类型          | 关键配置项                       | 说明                 |
 | ------------- | --------------------------- | ------------------ |
-| **IMAGE**     | `url`   | 图片URL         |
+| **IMAGE**     | `url`, `width`, `height`   | 图片URL，渲染尺寸宽高        |
 | **TEXT**      | `text`, `font`, `align` | 支持多行文 |
 | **CIRCLE**    | `radius`      | 圆形半径          |
 | **RECT**      | `width`, `height`           | 矩形宽高               |
 | **ROUNDRECT** | `radius`                    | 圆角半径            |
 
+#### IMAGE 类型
+```typescript
+export interface W2CDrawImage extends W2CDrawStartPosition {
+  url: string
+  width?: number
+  height?: number
+}
+```
 
 #### TEXT 类型
 
