@@ -88,6 +88,7 @@ export class Wxml2Canvas {
    * @returns Promise<string> 返回图片临时路径
    */
   public async generate(): Promise<string> {
+    // @ts-ignore
     this.ctx = uni.createCanvasContext(this.canvasId, this.instance)
 
     if (!this.ctx) {
