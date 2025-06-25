@@ -13,6 +13,8 @@ export interface W2CDrawStartPosition {
 
 export interface W2CDrawImage extends W2CDrawStartPosition {
   url: string
+  width?: number
+  height?: number
 }
 
 export interface W2CDrawText extends W2CDrawStartPosition {
@@ -86,7 +88,6 @@ export class Wxml2Canvas {
    * @returns Promise<string> 返回图片临时路径
    */
   public async generate(): Promise<string> {
-    // @ts-ignore
     this.ctx = uni.createCanvasContext(this.canvasId, this.instance)
 
     if (!this.ctx) {
@@ -163,9 +164,9 @@ export class Wxml2Canvas {
     return
   }
 
-  private async drawImage({ url, startX, startY }: W2CDrawImage): Promise<void> {
-    const { path, width, height } = await this.getTempFileInfo(url)
-    this.ctx.drawImage(path, startX, startY, width, height)
+  private async drawImage({ url, startX, startY, width, height }: W2CDrawImage): Promise<void> {
+    const { path, width: originWidth, height: originHeight } = await this.getTempFileInfo(url)
+    this.ctx.drawImage(path, startX, startY, width || originWidth, height || originHeight)
   }
 
   /**
