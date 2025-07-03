@@ -1,9 +1,15 @@
-export type W2CDrawType = 'IMAGE' | 'TEXT' | 'CIRCLE' | 'RECT' | 'ROUNDRECT'
+export type W2CDrawType = 'IMAGE' | 'CIRCLEIMAGE' | 'TEXT' | 'CIRCLE' | 'RECT' | 'ROUNDRECT'
 
 export interface W2CWxml {
   type: W2CDrawType
   layer?: number
-  desc: W2CDrawImage | W2CDrawText | W2CDrawCircle | W2CDrawRect | W2CDrawRoundRect
+  desc:
+    | W2CDrawImage
+    | W2CDrawCircleImage
+    | W2CDrawText
+    | W2CDrawCircle
+    | W2CDrawRect
+    | W2CDrawRoundRect
 }
 
 export interface W2CDrawStartPosition {
@@ -15,6 +21,13 @@ export interface W2CDrawImage extends W2CDrawStartPosition {
   url: string
   width?: number
   height?: number
+}
+
+export interface W2CDrawCircleImage extends W2CDrawStartPosition {
+  url: string
+  width: number
+  height: number
+  radius: number
 }
 
 export interface W2CDrawText extends W2CDrawStartPosition {
@@ -134,6 +147,10 @@ export class Wxml2Canvas {
         await this.drawImage(desc as W2CDrawImage)
         return
 
+      case 'CIRCLEIMAGE':
+        await this.drawCircleImage(desc as W2CDrawCircleImage)
+        return
+
       case 'TEXT':
         this.drawText(desc as W2CDrawText)
         return
@@ -168,6 +185,23 @@ export class Wxml2Canvas {
   private async drawImage({ url, startX, startY, width, height }: W2CDrawImage): Promise<void> {
     const { path, width: originWidth, height: originHeight } = await this.getTempFileInfo(url)
     this.ctx.drawImage(path, startX, startY, width || originWidth, height || originHeight)
+  }
+
+  private async drawCircleImage({
+    url,
+    startX,
+    startY,
+    width,
+    height,
+    radius,
+  }: W2CDrawCircleImage) {
+    this.ctx.save()
+    this.ctx.beginPath()
+    this.ctx.arc(startX + width! / 2, startY + height! / 2, radius, 0, Math.PI * 2)
+    this.ctx.clip()
+    const { path, width: originWidth, height: originHeight } = await this.getTempFileInfo(url)
+    this.ctx.drawImage(path, startX, startY, width || originWidth, height || originHeight)
+    this.ctx.restore()
   }
 
   /**
