@@ -1,6 +1,6 @@
 
 ##  开篇
-最近自己觉得很迷茫，没有什么技术热情，不知道该做些什么，就写写效率工具，并记录下来吧。
+最近自己想写写效率工具，并记录下来吧。
 
 后面我会不定期写，一天1个、两天1个、三天1个甚至一周1个，都有可能。
 
@@ -58,7 +58,8 @@ pnpm add uni-wxml2canvas@latest
 ### options：描述最终要生成的图片中存在哪些内容
 
 ```typescript
-export type W2CDrawType = 'IMAGE' | 'TEXT' | 'CIRCLE' | 'RECT' | 'ROUNDRECT'
+// CIRCLEIMAGE 类型，1.1.0版本开始支持
+export type W2CDrawType = 'IMAGE' | 'CIRCLEIMAGE' | 'TEXT' | 'CIRCLE' | 'RECT' | 'ROUNDRECT'
 
 export type W2COptions = Record<'width' | 'height', number> & Record<'wxml', W2CWxml | W2CWxml[]>
 
@@ -68,6 +69,7 @@ export interface W2CWxml {
   layer?: number // 层级控制，默认 1
   desc: // 类型专属配置
     | W2CDrawImage
+    | W2CDrawCircleImage
     | W2CDrawText
     | W2CDrawCircle
     | W2CDrawRect
@@ -100,6 +102,8 @@ export interface W2CDrawStartPosition {
 | **ROUNDRECT** | `radius`                    | 圆角半径            |
 
 #### IMAGE 类型
+
+用来绘制图片
 ```typescript
 export interface W2CDrawImage extends W2CDrawStartPosition {
   url: string
@@ -108,9 +112,21 @@ export interface W2CDrawImage extends W2CDrawStartPosition {
 }
 ```
 
+#### CIRCLEIMAGE 类型<span style="color: #ff0000">（1.1.0版本开始支持）</span>
+
+用来绘制圆形图片
+```typescript
+export interface W2CDrawCircleImage extends W2CDrawStartPosition {
+  url: string
+  width: number
+  height: number
+  radius: number
+}
+```
+
 #### TEXT 类型
 
-用来绘制文本，支持多行文本控制（maxWidth、lineHeight)
+用来绘制文本，支持多行文本控制（maxWidth、lineHeight）
 ```typescript
 export interface W2CDrawText extends W2CDrawStartPosition {
   text: string
