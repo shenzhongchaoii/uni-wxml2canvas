@@ -227,7 +227,7 @@ export class Wxml2Canvas {
     }
 
     const allRow = Math.ceil(this.ctx.measureText(text).width / maxWidth)
-    const count = allRow >= 1 ? 1 : allRow
+    const count = allRow >= 1 ? allRow : 1
 
     let endPos = 0
     for (let j = 0; j < count; j++) {
